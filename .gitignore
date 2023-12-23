@@ -1,2 +1,8 @@
+# Ignore example/input data
 example/
 input/
+
+# Ignore non-source java files
+*.class
+*.jar
+*.ear
