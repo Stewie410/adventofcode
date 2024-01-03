@@ -1,6 +1,7 @@
 # Ignore example/input data
 example/
 input/
+prompts/
 
 # Ignore non-source java files
 *.class
