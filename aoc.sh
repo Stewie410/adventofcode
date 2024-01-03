@@ -63,9 +63,23 @@ main() {
     source "${0%/*}/${year}/bash/${date}.sh"
 
     case "${only}" in
-        a )     part_a "${file}";;
-        b )     part_b "${file}";;
-        * )     part_a "${file}"; part_b "${file}";;
+        a )
+            if declare -F 'part_a' &>/dev/null; then
+                part_a "${file}"
+            else
+                solution "${file}" | head -1
+            fi
+            ;;
+        b )
+            if declare -F 'part_b' &>/dev/null; then
+                part_b "${file}"
+            else
+                solution "${file}" | tail -1
+            fi
+            ;;
+        * )
+            solution "${file}"
+            ;;
     esac
 }
 
