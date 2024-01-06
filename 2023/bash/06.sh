@@ -3,8 +3,8 @@
 #
 # This is the worst thing I've every written.
 #
-# Thankfully, the final version was cowritten by a friend, who would not take
-# "no" for an answer.
+# Thankfully, the final version was cowritten by a friend (@Grub4K), who would
+# not take "no" for an answer.
 
 solution() {
     local j line result square sqrt quad
