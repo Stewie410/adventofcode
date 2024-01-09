@@ -2,7 +2,7 @@
 
 solution() {
     part_a "${1}"
-    on_ranges "${1}"
+    part_b "${1}"
 }
 
 part_a() {
@@ -40,7 +40,7 @@ part_a() {
 # couldn't write something entirely on my own, so based my solution
 # *heavily* on:
 # https://www.reddit.com/r/adventofcode/comments/18b4b0r/2023_day_5_solutions/kcbv9j1/
-on_ranges() {
+part_b() {
     _seeds() {
         tr " " '\n' <<< "${1##*: }" | \
             paste --delimiters=" " - - | \
@@ -109,45 +109,4 @@ on_ranges() {
     done
 
     printf '%d\n' "${least}"
-}
-
-# My original solution as "reverse" brute force
-# Running this takes at least 4 days if not longer, given its single-threaded
-# Leaving this in-place for one commit for posterity
-rev_brute_force() {
-    local -a maps seeds
-    local j k line loc src dst len
-
-    while read -r line; do
-        if [[ "${line}" =~ ^seeds: ]]; then
-            mapfile -t seeds < <(tr " " '\n' <<< "${line##*: }" | \
-                paste --delimiters=" " - - | \
-                awk '{ print $1, $1 + $2 - 1 }' \
-            )
-        elif [[ "${line}" =~ map:\s*$ ]]; then
-            j="$(( ${j:=-1} + 1 ))"
-        elif [[ "${line}" =~ ^[0-9] ]]; then
-            maps["${j}"]+="${line},"
-        fi
-    done < "${1}"
-
-    mapfile -t seeds < <(printf '%s\n' "${seeds[@]}" | sort --numeric-sort)
-
-    for (( j = 0, loc = j; ; j++, loc = j )); do
-        for (( k = ${#maps[@]} - 1; k >= 0; k-- )); do
-            while read -r dst src len; do
-                if (( loc >= dst && loc <= dst + len - 1 )); then
-                    (( loc = loc - dst + src ))
-                    break
-                fi
-            done < <(tr "," '\n' <<< "${maps[k]}")
-        done
-
-        while read -r src dst; do
-            if (( loc >= src && loc <= dst )); then
-                printf '%d\n' "${j}"
-                break 2
-            fi
-        done < <(printf '%s\n' "${seeds[@]}")
-    done
 }
