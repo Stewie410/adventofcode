@@ -65,7 +65,7 @@ bubble() {
 
 solution() {
     local -a left right counts
-    local i l r dist distance similarity
+    local i l r n distance similarity
 
     while read -r l r; do
         left+=("${l}")
@@ -83,10 +83,9 @@ solution() {
     mapfile -t right < <(quicksort "${right[@]}")
 
     for (( i = 0; i < ${#left[@]}; i++ )); do
-        dist="$(( left[i] - right[i] ))"
-        (( distance += ${dist#-} ))
-        dist="${left[i]}"
-        (( similarity += dist * counts[dist] ))
+        (( n = left[i] - right[i] ))
+        (( distance += n * ((n > 0) - ( n < 0)) ))
+        (( similarity += left[i] * counts[(left[i])] ))
     done
 
     printf '%s\n' "${distance}" "${similarity}"
