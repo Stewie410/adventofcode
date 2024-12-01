@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# See how much easier our lives would be if we could just use coreutils?
+cheating() {
+    printf '%s\n' "${@}" | sort --numeric-sort
+}
+
 # https://stackoverflow.com/a/30576368
 # iterative quicksort
 quicksort_iter() {
@@ -118,6 +123,9 @@ solution() {
         right+=("${r}")
         (( counts[r]++ ))
     done < "${1}"
+
+    # mapfile -t left < <(cheating "${left[@]}")
+    # mapfile -t right < <(cheating "${right[@]}")
 
     # mapfile -t left < <(bubble "${left[@]}")
     # mapfile -t right < <(bubble "${right[@]}")
