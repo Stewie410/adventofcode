@@ -1,6 +1,50 @@
 #!/usr/bin/env bash
 
 # https://stackoverflow.com/a/30576368
+quicksort_iter() {
+    (( $# == 0 )) && return 0
+
+    local -a stack arr smaller larger
+    local start stop pivot i
+
+    stack=( "0" "$(( $# - 1 ))" )
+    arr=( "${@}" )
+
+    while (( ${#stack[@]} > 0 )); do
+        (( start = stack[0], stop = stack[1] ))
+        stack=( "${stack[@]:2}" )
+        smaller=()
+        larger=()
+        pivot="${arr[start]}"
+
+        for (( i = start + 1; i <= stop; i++ )); do
+            if (( arr[i] < pivot )); then
+                smaller+=( "${arr[i]}" )
+            else
+                larger+=( "${arr[i]}" )
+            fi
+        done
+
+        arr=(
+            "${arr[@]:0:start}"
+            "${smaller[@]}"
+            "${pivot}"
+            "${larger[@]}"
+            "${arr[@]:stop+1}"
+        )
+
+        if (( ${#smaller[@]} >= 2 )); then
+            stack+=( "${start}" "$(( start + ${#smaller[@]} - 1 ))")
+        fi
+        if (( ${#larger[@]} >= 2 )); then
+            stack+=( "$(( stop - ${#larger[@]} + 1 ))" "${stop}" )
+        fi
+    done
+
+    printf '%s\n' "${arr[@]}"
+}
+
+# https://stackoverflow.com/a/30576368
 quicksort() {
     (( $# == 0 )) && return 0
 
@@ -79,8 +123,11 @@ solution() {
     # mapfile -t left < <(insertion "${left[@]}")
     # mapfile -t right < <(insertion "${right[@]}")
 
-    mapfile -t left < <(quicksort "${left[@]}")
-    mapfile -t right < <(quicksort "${right[@]}")
+    # mapfile -t left < <(quicksort "${left[@]}")
+    # mapfile -t right < <(quicksort "${right[@]}")
+
+    mapfile -t left < <(quicksort_iter "${left[@]}")
+    mapfile -t right < <(quicksort_iter "${right[@]}")
 
     for (( i = 0; i < ${#left[@]}; i++ )); do
         (( n = left[i] - right[i] ))
