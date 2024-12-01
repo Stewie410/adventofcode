@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # https://stackoverflow.com/a/30576368
+# iterative quicksort
 quicksort_iter() {
     (( $# == 0 )) && return 0
 
@@ -45,6 +46,7 @@ quicksort_iter() {
 }
 
 # https://stackoverflow.com/a/30576368
+# recursive quicksort
 quicksort() {
     (( $# == 0 )) && return 0
 
