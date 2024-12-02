@@ -1,3 +1,4 @@
 # Ignore example/input data
+aoc.*
 data.*
 test.*
