@@ -23,3 +23,10 @@ solution() {
 
     printf '%d\n' "${sum}" "${power}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    solution "${1}"
+}
+
+main "${@}"

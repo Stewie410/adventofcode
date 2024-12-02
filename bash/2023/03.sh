@@ -39,3 +39,10 @@ solution() {
 
     printf '%d\n' "${parts}" "${ratios}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    solution "${1}"
+}
+
+main "${@}"

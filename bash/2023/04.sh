@@ -28,3 +28,10 @@ solution() {
 
     printf '%d\n' "${a_total}" "${b_total}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    solution "${1}"
+}
+
+main "${@}"

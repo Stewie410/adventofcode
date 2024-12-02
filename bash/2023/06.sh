@@ -24,3 +24,10 @@ solution() {
 
     printf '%d\n' "$(( result / quad ))" "${quad}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    solution "${1}"
+}
+
+main "${@}"

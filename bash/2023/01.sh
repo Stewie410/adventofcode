@@ -32,3 +32,10 @@ solution() {
 
     printf '%d\n' "${sums[@]}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    solution "${1}"
+}
+
+main "${@}"

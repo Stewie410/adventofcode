@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-solution() {
-    part_a "${1}"
-    part_b "${1}"
-}
-
 part_a() {
     local -a maps
     local j line src dst len least
@@ -110,3 +105,11 @@ part_b() {
 
     printf '%d\n' "${least}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"
