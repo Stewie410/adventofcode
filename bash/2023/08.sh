@@ -60,3 +60,10 @@ solution() {
     done
     lcm "${cycles[@]}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    solution "${1}"
+}
+
+main "${@}"
