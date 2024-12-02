@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-02
 
 part_a() {
     local direction amount x y
@@ -11,7 +9,7 @@ part_a() {
             down )      y="$(( y + amount ))";;
             up )        y="$(( y - amount ))";;
         esac
-    done
+    done < "${1}"
 
     printf '%s\n' "$(( x * y ))"
 }
@@ -29,3 +27,11 @@ part_b() {
 
     printf '%s\n' "$(( x * y ))"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-10
 
 get_closing_char() {
     local -A list
@@ -82,3 +80,11 @@ part_b() {
 
     printf '%s\n' "${scores[$(( ${#scores[@]} / 2 ))]}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

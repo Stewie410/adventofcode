@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-08
 
 part_a() {
     local count digit
@@ -108,3 +106,11 @@ part_b() {
 
     printf '%s\n' "${sum}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

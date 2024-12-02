@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-05
 
 get_width() {
     local _ a b result
@@ -120,3 +118,11 @@ part_b() {
 
     printf '%s\n' "${count}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

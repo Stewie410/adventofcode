@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-06
 
 shift_array() {
     shift
@@ -30,10 +28,10 @@ model() {
     tr " " '+' <<< "${counts[@]}" | bc
 }
 
-part_a() {
+main() {
+    set -- "${1:-/dev/null}"
     model "${1}" "80"
-}
-
-part_b() {
     model "${1}" "256"
 }
+
+main "${@}"

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-09
 
 part_a() {
     _get_adjacents() {
@@ -71,3 +69,11 @@ part_b() {
         paste --serial --delimiter="*" | \
         bc
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-12
 
 part_a() {
     printf 'Not implemented\n' >&2
@@ -26,3 +24,11 @@ part_b() {
     printf 'Not implemented\n' >&2
     return 1
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-03
 
 get_most_common() {
     local all one zero
@@ -58,3 +56,11 @@ part_b() {
     rm --force "${tmp}"
     printf '%s\n' "$(( (2#${gen}) * (2#${scrub}) ))"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-07
 
 part_a() {
     local -a crab
@@ -66,3 +64,11 @@ part_b() {
 
     printf '%s (%s)\n' "${least}" "${position}"
 }
+
+main() {
+    set -- "${1:-/dev/null}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

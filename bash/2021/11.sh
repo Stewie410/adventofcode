@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2021-12-11
 
 flash() {
     (( flashes++ ))
@@ -114,3 +112,11 @@ part_b() {
 
     return 1
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"
