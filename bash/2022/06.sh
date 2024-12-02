@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-06
 
 get_markers() {
     local j line length count
@@ -21,10 +19,10 @@ get_markers() {
     done < "${1}"
 }
 
-part_a() {
+main() {
+    set -- "${1:-/dev/stdin}"
     get_markers "${1}" "4"
-}
-
-part_b() {
     get_markers "${1}" "14"
 }
+
+main "${@}"

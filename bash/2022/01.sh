@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-01
 
 filter() {
     awk '
@@ -22,3 +20,11 @@ part_b() {
         paste --serial --delimiters="+" | \
         bc
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

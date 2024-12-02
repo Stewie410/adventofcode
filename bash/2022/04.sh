@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-04
 
 part_a() {
     local a b c d total
@@ -25,3 +23,11 @@ part_b() {
 
     printf '%s\n' "${total}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

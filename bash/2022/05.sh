@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-05
 
 part_a() {
     local -a stacks
@@ -79,3 +77,11 @@ part_b() {
         cut --characters="1" | \
         paste --serial --delimiters='\0'
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

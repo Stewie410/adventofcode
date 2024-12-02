@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-10
 
 part_a() {
     local -a cmd
@@ -59,3 +57,11 @@ part_b() {
         done
     done < "${1}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

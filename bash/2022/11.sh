@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-11
 
 operation() {
     local opstr value
@@ -145,3 +143,11 @@ part_b() {
 
     printf '%d\n' "$(( first * second ))"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

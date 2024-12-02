@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-12
 
 parse() {
     local line j h char alpha
@@ -146,3 +144,11 @@ part_b() {
         fi
     done
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

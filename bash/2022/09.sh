@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-09
 
 part_a() {
     local -A steps
@@ -69,3 +67,11 @@ part_b() {
 
     printf '%s\n' "${#steps[@]}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"

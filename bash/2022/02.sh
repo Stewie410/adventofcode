@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-# 2022-12-02
 
 part_a() {
     local a b c str score
@@ -45,3 +43,11 @@ part_b() {
 
     printf '%s\n' "${score}"
 }
+
+main() {
+    set -- "${1:-/dev/stdin}"
+    part_a "${1}"
+    part_b "${1}"
+}
+
+main "${@}"
