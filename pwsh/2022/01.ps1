@@ -1,34 +1,50 @@
-# 2022-12-01
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
+    [string]
+    $InputFile
+)
 
-function Get-Totals($file) {
-	$current = 0
-	$list = @()
+function Get-Totals($file)
+{
+    $current = 0
+    $list = @()
 
-	switch -Regex -File $file {
-		'[0-9]' {
-			$current += [int] $_
-		}
-		'^\s*$' {
-			$list += @($current)
-			$current = 0
-		}
-	}
+    switch -Regex -File $file
+    {
+        '[0-9]'
+        {
+            $current += [int] $_
+        }
+        '^\s*$'
+        {
+            $list += @($current)
+            $current = 0
+        }
+    }
 
-	$list += @($current)
+    $list += @($current)
 
-	$list | Sort-Object -Descending
+    $list | Sort-Object -Descending
 }
 
-function Get-PartA($file) {
-	Get-Totals $file | Select-Object -First 1
+function Get-PartA($file)
+{
+    Get-Totals $file | Select-Object -First 1
 }
 
-function Get-PartB($file) {
-	$total = 0
+function Get-PartB($file)
+{
+    $total = 0
 
-	Get-Totals $file | Select-Object -First 3 | ForEach-Object {
-		$total += $_
-	}
+    Get-Totals $file | Select-Object -First 3 | ForEach-Object {
+        $total += $_
+    }
 
-	return $total
+    return $total
 }
+
+Get-PartA $InputFile
+Get-PartB $InputFile
+
+
