@@ -1,61 +1,67 @@
 #!/usr/bin/env bash
 
-get_most_common() {
-    local all one zero
-    all="$(cut --characters="${1}" "${2}" | paste --serial --delimiters='\0')"
-    zero="${all//1/}"
-    one="${all//0/}"
-
-    (( ${#one} > ${#zero} )) && return 1
-    return 0
-}
-
-get_len() {
-    head -1 "${1}" | wc --chars
-}
-
 part_a() {
-    local gamma epsilon len j
+    local -a lines count
+    local i j gamma epsilon
 
-    len="$(get_len "${1}")"
+    mapfile -t lines < "${1}"
 
-    for (( j = 1; j <= len; j++ )); do
-        if get_most_common "${j}" "${1}"; then
-            gamma+="0"
-            epsilon+="1"
-        else
-            gamma+="1"
-            epsilon+="0"
-        fi
+    for (( i = 0; i < ${#lines[0]}; i++ )); do
+        (( count[0] = 0, count[1] = 0 ))
+        for (( j = 0; j < ${#lines[@]}; j++ )); do
+            (( count[${lines[j]:i:1}]++ ))
+        done
+        gamma+="$(( count[0] > count[1] ? 0 : 1 ))"
+        epsilon+="$(( !${gamma: -1} ))"
     done
 
     printf '%s\n' "$(( (2#${gamma}) * (2#${epsilon}) ))"
 }
 
 part_b() {
-    local gen scrub init bit tmp j
-    tmp="$(mktemp)"
+    local -a lines count oxy co copy
+    local i j bit
 
-    init="$(get_most_common 1 "${1}")"
-    bit="${init}"
-    sed --quiet "/^${bit}/p" "${1}" > "${tmp}"
-    for (( j = 2; $(wc --lines < "${tmp}") > 1; j++ )); do
-        bit="$(get_most_common "${j}" "${tmp}")"
-        sed --in-place --quiet "/^[0-9]\{$(( j - 1 ))\}${bit}/p" "${tmp}"
+    mapfile -t oxy < "${1}"
+    mapfile -t co < "${1}"
+
+    while (( ${#oxy[@]} > 1 )); do
+        for (( i = 0; i < ${#oxy[0]}; i++ )); do
+            (( ${#oxy[@]} == 1 )) && break 2
+            (( count[0] = 0, count[1] = 0 ))
+            for (( j = 0; j < ${#oxy[@]}; j++ )); do
+                (( count[${oxy[j]:i:1}]++ ))
+            done
+            bit="$(( count[0] > count[1] ? 0 : 1 ))"
+            copy=()
+            for (( j = 0; j < ${#oxy[@]}; j++ )); do
+                (( ${oxy[j]:i:1} != bit )) && continue
+                copy+=( "${oxy[j]}" )
+            done
+            oxy=( "${copy[@]}" )
+        done
     done
-    read -r gen < "${tmp}"
 
-    bit="${init}"
-    sed --quiet "/^$(( 1 - bit ))/p" "${1}" > "${tmp}"
-    for (( j = 2; $(wc --lines < "${tmp}"); j++ )); do
-        bit="$(get_most_common "${j}" "${tmp}")"
-        sed --in-place --quiet "/^[0-9]\{$(( j - 1 ))\}$(( 1 - bit ))/p" "${tmp}"
+    while (( ${#co[@]} > 1 )); do
+        for (( i = 0; i < ${#co[0]}; i++ )); do
+            (( ${#co[@]} == 1 )) && break 2
+            (( count[0] = 0, count[1] = 0 ))
+            for (( j = 0; j < ${#co[@]}; j++ )); do
+                (( count[${co[j]:i:1}]++ ))
+            done
+            bit="$(( count[1] < count[0] ? 1 : 0 ))"
+            copy=()
+            for (( j = 0; j < ${#co[@]}; j++ )); do
+                (( ${co[j]:i:1} != bit )) && continue
+                copy+=( "${co[j]}" )
+            done
+            co=( "${copy[@]}" )
+        done
     done
-    read -r scrub < "${tmp}"
 
-    rm --force "${tmp}"
-    printf '%s\n' "$(( (2#${gen}) * (2#${scrub}) ))"
+    printf '%s\n' "$(( (2#${oxy[0]}) * (2#${co[0]}) ))"
 }
+
 
 main() {
     set -- "${1:-/dev/stdin}"
