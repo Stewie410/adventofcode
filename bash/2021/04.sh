@@ -1,142 +1,103 @@
 #!/usr/bin/env bash
 
-part_a() {
-    if ! command -v 'bc' &>/dev/null; then
-        printf 'Missing required application: bc\n' >&2
-        return 1
-    fi
-
-    _get_winning() {
-        local k b e
-        for (( k = 0; k < $(wc --lines < "${1}") / 5; k++ )); do
-            b="$(( 1 + (k * 5) ))"
-            e="$(( 5 + (k * 5) ))"
-
-            sed --quiet "${b},${e}p" "${1}" | awk --assign "board=${k}" '
-                /^(#\s){4}#$/ {
-                    print board
-                    exit 0
-                }
-
-                /#/ {
-                    for (i = 1; i <= 5; i++)
-                        if ($i == "#")
-                            cols[i]++
-                }
-
-                END {
-                    for (i = 1; i <= 5; i++) {
-                        if (cols[i] == 5) {
-                            print board
-                            exit 0
-                        }
-                    }
-                    exit 1
-                }
-            ' && return 0
-        done
-        return 1
-    }
-
-    _get_score() {
-        local b e
-        b="$(( 1 + (${1} * 5) ))"
-        e="$(( 5 + (${1} * 5) ))"
-
-        sed --quiet "${b},${e}p;s/#/0/g;s/ /+/g" "${2}" | \
-            paste --serial --delimiter="+" | \
-            bc
-    }
-
-    local -a numbers
-    local boards score board j
-
-    boards="$(mktemp)"
-    mapfile -t numbers < <(head -1 "${1}" | tr "," '\n')
-    sed '1,2d;s/^ /0/;s/  / 0/g;s/^\s*$/d' "${1}" > "${boards}"
-
-    for j in "${numbers[@]}"; do
-        (( ${#j} == 1 )) && j="0${j}"
-        sed --in-place "s/${j}/#/g" "${boards}"
-        board="$(_get_winning "${boards}")"
-        if [[ -n "${board}" ]]; then
-            score="$(_get_score "${board}" "${boards}")"
-            sed --quiet "$(( 1 + (board * 5) )),$(( 5 + (board * 5) ))p" "${boards}" | column -t
-            printf '%s: %s\n' \
-                "Board" "${board}" \
-                "Base" "${score}" \
-                "Last" "${j}" \
-                "Score" "$(( j * score ))"
-        fi
-    done
-
-    rm --force "${boards}"
-    (( score ))
+format_draws() {
+    local arr
+    read -ra arr <<< "${1//,/ }"
+    printf '%02d\n' "${arr[@]}"
 }
 
-part_b() {
-    _is_winner() {
-        local -a board
-        local str x y
+format_board() {
+    while (( $# > 0 )); do
+        [[ "${1:0:1}" == " " ]] && set -- "0${1# }" "${@:2}"
+        printf '%s\n' "${1//  / 0}"
+        shift
+    done
+}
 
-        mapfile -t board < <(tr " " '\n' < "${1}")
-        for x in {0..4}; do
-            [[ "${board[*]:$(( x * 5 )):5}" =~ (${2} ){4}${2} ]] && return 0
-            for y in {0..4}; do
-                str+="${board[$(( y * 5 + x ))]}"
-            done
-            [[ "${str}" =~ (${2}){5} ]] && return 0
-            unset str
+is_winning() {
+    local -a board
+    local x y line diag
+
+    set -- "${1//[0-9][0-9]/.}"
+    set -- "${1// /}"
+    IFS=$'\n' mapfile -t board <<< "${1}"
+
+    # horizontal
+    for y in "${board[@]}"; do
+        [[ "${y}" == "xxxxx" ]] && return 0
+    done
+
+    # vertical & NW-SE diag
+    unset diag
+    for (( x = 0; x < 5; x++ )); do
+        unset line
+        diag+="${board[x]:x:1}"
+        for (( y = 0; y < 5; y++ )); do
+            line+="${board[y]:x:1}"
         done
+        [[ "${line}" == "xxxxx" ]] && return 0
+    done
+    [[ "${diag}" == "xxxxx" ]] && return 0
 
-        return 1
-    }
-
-    _get_base() {
-        tr " " '+' <<< "${*}" | bc
-    }
-
-    local -a numbers boards
-    local remaining mark j k
-
-    mapfile -t numbers < <(head -1 "${1}" | tr "," '\n')
-    mapfile -t boards < <(sed '1,2d;/^\s*$/d;s/^ /0/;s/  / 0/g' "${1}" | \
-        paste --delimiters=" " - - - - - \
-    )
-    remaining="${#boards[@]}"
-    mark="#"
-
-    for j in "${numbers[@]}"; do
-        (( ${#j} == 1 )) && j="0${j}"
-        for (( k = 0; k < ${#boards[@]}; k++ )); do
-            if [[ "${boards[$k]}" != "winner" ]]; then
-                boards[${k}]="${boards[$k]//$j/$mark}"
-                if _is_winner "${boards[$k]}" "${mark}"; then
-                    if (( remaining == 1 )); then
-                        tr " " '\n' <<< "${boards[$k]}" | \
-                            paste --delimiters=" " - - - - - | \
-                            column -t
-                        printf '%s: %s\n' \
-                            "Board" "${k}" \
-                            "Base" "$(_get_base "${boards[$k]//$mark/0}")" \
-                            "Last" "${j}" \
-                            "Score" "$(( $(_get_base "${boards[$k]//$mark/0}") * j ))"
-                        return 0
-                    fi
-                    boards[${k}]="winner"
-                    (( remaining-- ))
-                fi
-            fi
+    # NE-SW diag
+    unset diag
+    for (( y = 0; y < 5; y++ )); do
+        for (( x = 4; x >= 0; x-- )); do
+            diag+="${board[y]:x:1}"
         done
     done
+    [[ "${diag}" == "xxxxx" ]] && return 9
 
     return 1
 }
 
+# board, mult
+get_score() {
+    local -a board nums
+    local row num sum
+
+    IFS=$'\n' mapfile -t board <<< "${1}"
+
+    for row in "${board[@]}"; do
+        read -ra nums <<< "${row}"
+        for num in "${nums[@]}"; do
+            case "${num:0:1}" in
+                0 ) (( sum += ${num:1} ));;
+                x ) (( sum += 0 ));;
+                * ) (( sum += num ));;
+            esac
+        done
+    done
+
+    printf '%s\n' "$(( sum * $2 ))"
+}
+
+# slow, but works
 main() {
-    set -- "${1:-/dev/stdin}"
-    part_a "${1}"
-    part_b "${1}"
+    local -a data draws boards won
+    local i j first last
+
+    mapfile -t data < "${1:-/dev/stdin}"
+    mapfile -t draws < <(format_draws "${data[0]}")
+
+    for (( i = 1; i + 6 <= ${#data[@]}; i += 6 )); do
+        boards+=( "$(format_board "${data[@]:i+1:5}")" )
+    done
+
+    for (( i = 0; i < ${#draws[@]} && ${#won[@]} < ${#boards[@]}; i++ )); do
+        for (( j = 0; j < ${#boards[@]}; j++ )); do
+            [[ -n "${won[j]}" ]] && continue
+
+            boards[j]="${boards[j]//${draws[i]}/x}"
+            is_winning "${boards[j]}" || continue
+            won[j]="$(get_score "${boards[j]}" "${draws[i]}")"
+
+            [[ -z "${first}" ]] && first="${won[j]}"
+            last="${won[j]}"
+        done
+    done
+
+    printf '%s\n' "${first}" "${last}"
 }
 
 main "${@}"
