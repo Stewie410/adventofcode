@@ -1,57 +1,29 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2178
 
-# ref(in) ref(out) ref(xinit) ref(yinit)
-flatten() {
-    local -n in="${1}"
-    local -n out="${2}"
-    local -n xs="${3}"
-    local -n ys="${4}"
-    local c
-
-    for (( y = 0; y < ${#in[@]}; y++ )); do
-        for (( x = 0; x < ${#in[0]}; x++ )); do
-            case "${in[y]:x:1}" in
-                "." )   c="0";;
-                "#" )   c="1";;
-                "^" )   c="2"; xs="${x}"; ys="${y}";;
-            esac
-            out+=( "${c}" )
-        done
-    done
-}
-
 # part_a
 # ref start_x start_y width height
 get_path() {
     local -n arr="${1}"
     local -a pos
-    local x y w h d next
+    local x y xn yn d
     x="${2}"
     y="${3}"
-    w="${4}"
-    h="${5}"
     d="0"
 
-    while (( x >= 0 && x < w && y >= 0 && y < h )); do
+    while (( x >= 0 && x < ${4} && y >= 0 && y < ${5} )); do
         (( pos[y * w + x]++ ))
-        # printf '%s,%s\n' "${y}" "${x}" >&2
         case "${d}" in
-            0 ) (( next = (y - 1) * w + x )); (( y - 1 < 0 )) && break;;
-            1 ) (( next = y * w + (x + 1) )); (( x + 1 > w )) && break;;
-            2 ) (( next = (y + 1) * w + x )); (( y + 1 > h )) && break;;
-            3 ) (( next = y * w + (x - 1) )); (( x - 1 < 0 )) && break;;
+            0 ) (( xn = x, yn = y - 1 ));;
+            1 ) (( xn = x + 1, yn = y ));;
+            2 ) (( xn = x, yn = y + 1 ));;
+            3 ) (( xn = x - 1, yn = y ));;
         esac
-        (( next >= 0 && next <= ${#arr[@]} )) || break
-        if (( arr[next] == 1 )); then
+        (( xn >= 0 && xn < ${4} && yn >= 0 && yn < ${5} )) || break
+        if (( arr[yn * ${4} + xn] == 1 )); then
             (( d = (d + 1) % 4 ))
         else
-            case "${d}" in
-                0 ) (( y-- ));;
-                1 ) (( x++ ));;
-                2 ) (( y++ ));;
-                3 ) (( x-- ));;
-            esac
+            (( x = xn, y = yn ))
         fi
     done
 
@@ -63,22 +35,20 @@ get_path() {
 is_loop() {
     local -n arr="${1}"
     local -A vex
-    local x y xn yn w h d next
+    local x y xn yn d
     x="${2}"
     y="${3}"
-    w="${4}"
-    h="${5}"
     d="0"
 
-    while (( x >= 0 && x < w && y >= 0 && y < h )); do
+    while (( x >= 0 && x < ${4} && y >= 0 && y < ${5} )); do
         case "${d}" in
             0 ) (( xn = x, yn = y - 1 ));;
             1 ) (( xn = x + 1, yn = y ));;
             2 ) (( xn = x, yn = y + 1 ));;
             3 ) (( xn = x - 1, yn = y ));;
         esac
-        (( xn >= 0 && xn < w && yn >= 0 && yn < h )) || return 1
-        if (( arr[yn * w + xn] == 1 )); then
+        (( xn >= 0 && xn < ${4} && yn >= 0 && yn < ${5} )) || return 1
+        if (( arr[yn * ${4} + xn] == 1 )); then
             (( vex["${xn},${yn},${d}"]++ ))
             (( vex["${xn},${yn},${d}"] > 1 )) && return 0
             (( d = (d + 1) % 4 ))
@@ -90,15 +60,21 @@ is_loop() {
     return 1
 }
 
-solution() {
-    local -a raw map unique
-    local i w h xinit yinit loops
+main() {
+    local -a map unique
+    local i w h xinit yinit loops line
 
-    mapfile -t raw < "${1}"
-    flatten "raw" "map" "xinit" "yinit"
-    w="${#raw[0]}"
-    h="${#raw[@]}"
-    unset raw
+    # flatten, get start & dimensions
+    while read -r line; do
+        for (( i = 0; i < ${#line}; i++ )); do
+            case "${line:i:1}" in
+                "." )   map+=( "0" );;
+                "#" )   map+=( "1" );;
+                "^" )   map+=( "2" ); xinit="${i}"; yinit="${h:=0}";;
+            esac
+        done
+        (( w = ${#line}, h++ ))
+    done < "${1:-/dev/stdin}"
 
     mapfile -t unique < <(get_path "map" "${xinit}" "${yinit}" "${w}" "${h}")
     printf '%s\n' "${#unique[@]}"
@@ -111,14 +87,6 @@ solution() {
     done
 
     printf '%s\n' "${loops:-0}"
-}
-
-main() {
-    if [[ -z "${1}" ]]; then
-        printf 'Must specify input file as arg[0]\n' >&2
-        return 1
-    fi
-    solution "${1}"
 }
 
 main "${@}"
