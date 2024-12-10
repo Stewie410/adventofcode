@@ -22,7 +22,7 @@ check() {
 
 main() {
     local -a operands
-    local line p1
+    local line p1 p2
 
     while read -r line; do
         read -ra operands <<< "${line##*: }"
