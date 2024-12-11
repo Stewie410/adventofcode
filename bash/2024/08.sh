@@ -1,76 +1,62 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2178
 
-# ref(map) w h
-print_map() {
-    local -n arr="${1}"
-    local y x
+# nodes ref(out_a) ref(out_b) width height
+calc_anti() {
+    local -n out_a="${2}"
+    local -n out_b="${3}"
+    local -a nodes
+    local i j k w h o x1 y1 x2 y2 dx dy xn yn
 
-    for (( y = 0; y < ${3}; y++ )); do
-        for (( x = 0; x < ${2}; x++ )); do
-            printf '%s' "${arr[y * ${2} + x]}"
+    w="${4}"
+    h="${5}"
+
+    read -ra nodes <<< "${1}"
+    (( ${#nodes[@]} == 1 )) && return 1
+
+    for (( i = 0; i < ${#nodes[@]}; i++ )); do
+        (( y1 = ${nodes[i]%,*}, x1 = ${nodes[i]#*,} ))
+        for (( j = i + 1; j < ${#nodes[@]}; j++ )); do
+            (( y2 = ${nodes[j]%,*}, x2 = ${nodes[j]#*,} ))
+            (( dx = x1 - x2, dy = y1 - y2 ))
+
+            for (( o = 0; ; o++ )); do
+                (( xn = x1 + dx * o, yn = y1 + dy * o ))
+                (( xn >= 0 && xn < w && yn >= 0 && yn < h )) || break
+                (( o == 1 )) && (( out_a[yn * w + xn]++ ))
+                (( out_b[yn * w + xn]++ ))
+            done
+
+            for (( o = 0; ; o++ )); do
+                (( xn = x2 - dx * o, yn = y2 - dy * o ))
+                (( xn >= 0 && xn < w && yn >= 0 && yn < h )) || break
+                (( o == 1 )) && (( out_a[yn * w + xn]++ ))
+                (( out_b[yn * w + xn]++ ))
+            done
         done
-        printf '\n'
     done
 }
 
 main() {
-    local -A nodes
-    local -a data map copy anti_a anti_b
-    local x y i j k jx jy kx ky dx dy w h
+    local -A towers
+    local -a hta htb
+    local w h i line class
 
-    mapfile -t data < "${1:-/dev/stdin}"
-    w="${#data[0]}"
-    h="${#data[@]}"
-
-    # build map and hashtable of nodes
-    for (( y = 0; y < h; y++ )); do
-        for (( x = 0; x < w; x++ )); do
-            map+=( "${data[y]:x:1}" )
-            if [[ "${map[-1]}" != "." ]]; then
-                nodes["${map[-1]}"]+="$(( y * w + x )) "
-            fi
+    # parse, get dimensions
+    while read -r line; do
+        (( w = ${#line}, h++ ))
+        [[ "${line}" =~ [^\.] ]] || continue
+        for (( i = 0; i < ${#line}; i++ )); do
+            [[ "${line:i:1}" != "." ]] || continue
+            towers["${line:i:1}"]+="$(( h - 1 )),${i} "
         done
+    done < "${1:-/dev/stdin}"
+
+    for class in "${towers[@]}"; do
+        calc_anti "${class}" "hta" "htb" "${w}" "${h}"
     done
 
-    for i in "${!nodes[@]}"; do
-        read -ra copy <<< "${nodes["${i}"]}"
-        (( ${#copy[@]} == 1 )) && return 0
-
-        for (( j = 0; j < ${#copy[@]}; j++ )); do
-            for (( k = j + 1; k < ${#copy[@]}; k++ )); do
-                (( jy = copy[j] / h, jx = copy[j] % w ))
-                (( ky = copy[k] / h, kx = copy[k] % w ))
-
-                (( anti_b[jy * w + jx]++, anti_b[ky * w + kx]++ ))
-
-                (( dy = jy - ky, dx = jx - kx ))
-
-                (( jy += dy, jx += dx ))
-                (( ky -= dy, kx -= dx ))
-
-                (( 0 <= jx && jx < w && 0 <= jy && jy < h )) \
-                    && (( anti_a[jy * w + jx]++ ))
-                (( 0 <= kx && kx < w && 0 <= ky && ky < h )) \
-                    && (( anti_a[ky * w + kx]++ ))
-
-                # j - k
-                (( y = jy, x = jx ))
-                while (( x >= 0 && x < w && y >= 0 && y < h )); do
-                    (( anti_b[y * w + x]++ ))
-                    (( x += dx, y += dy ))
-                done
-
-                # k - j
-                (( y = ky, x = kx ))
-                while (( x >= 0 && x < w && y >= 0 && y < h )); do
-                    (( anti_b[y * w + x]++ ))
-                    (( x -= dx, y -= dy ))
-                done
-            done
-        done
-    done
-
-    printf '%s\n' "${#anti_a[@]}" "${#anti_b[@]}"
+    printf '%s\n' "${#hta[@]}" "${#htb[@]}"
 }
 
 main "${@}"
