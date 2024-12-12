@@ -1,93 +1,75 @@
 #!/usr/bin/env bash
 
-# this is slow and should be fixed, eventually
-part_a() {
-    local -a disk
-    local i j k checksum
+# part_a
+# ref(disk)
+bit_fill() {
+    local -n out="${1}"
+    local i j
 
-    for (( i = 0, k = 0; i < ${#1}; i++ )); do
-        if (( i % 2 == 0 )); then
-            for (( j = 0; j < ${1:i:1}; j++ )); do
-                disk+=( "${k:=0}" )
-            done
-            (( k++ ))
-        else
-            for (( j = 0; j < ${1:i:1}; j++ )); do
-                disk+=( "-1" )
-            done
-        fi
-    done
-
-    for (( i = ${1:0:1}, j = ${#disk[@]} - 1; i != j; )); do
-        if (( disk[i] >= 0 )); then
-            (( i++ ))
-            continue
-        elif (( disk[j] < 0 )); then
-            (( j-- ))
+    for (( i = 0, j = ${#out[@]} - 1; i < j; )); do
+        if (( out[i] >= 0 || out[j] < 0 )); then
+            (( i += out[i] >= 0 ? 1 : 0 ))
+            (( j -= out[j] < 0 ? -1 : 0 ))
             continue
         fi
-
-        disk[i]="${disk[j]}"
-        disk[j]="."
-        (( i++, j-- ))
+        (( disk[i] = disk[j], disk[j] = -1, i++, j-- ))
     done
-
-    for (( i = 0; i < ${#disk[@]}; i++ )); do
-        [[ "${disk[i]}" == "." ]] && break
-        (( checksum += i * disk[i] ))
-    done
-
-    printf '%s\n' "${checksum:-0}"
 }
 
-part_b() {
-    local -a files empty disk
-    local i j k l fdx flen edx elen checksum
+# part_b
+# ref(disk) ref(files) ref(empty)
+block_fill() {
+    local -n out="${1}"
+    local -n f="${2}"
+    local -n e="${3}"
+    local i j k l fdx flen edx elen
 
-    for (( i = 0; i < ${#1}; i++ )); do
-        if (( i % 2 == 0 )); then
-            files+=( "${#disk[@]}:${1:i:1}" )
-            for (( j = 0, k = ${#files[@]} - 1; j < ${1:i:1}; j++ )); do
-                disk+=( "${k}" )
-            done
-        else
-            empty+=( "${#disk[@]}:${1:i:1}" )
-            for (( j = 0; j < ${1:i:1}; j++ )); do
-                disk+=( "-1" )
-            done
-        fi
-    done
-
-    for (( i = ${#files[@]} - 1; i > 0; i-- )); do
-        IFS=':' read -r fdx flen <<< "${files[i]}"
-        for (( j = 0; j < ${#empty[@]}; j++ )); do
-            IFS=':' read -r edx elen <<< "${empty[j]}"
+    for (( i = ${#f[@]} - 1; i > 0; i-- )); do
+        IFS=':' read -r fdx flen <<< "${f[i]}"
+        for (( j = 0; j < ${#e[@]}; j++ )); do
+            IFS=':' read -r edx elen <<< "${e[j]}"
             (( edx < fdx )) || break
             (( edx > 0 && elen >= flen )) || continue
-
             for (( k = edx, l = fdx; k < (edx + flen); k++, l++ )); do
                 (( disk[k] = i, disk[l] = -1, elen-- ))
             done
-
             (( edx = elen > 0 ? edx + flen : -1 ))
-            empty[j]="${edx}:${elen}"
+            e[j]="${edx}:${elen}"
             break
         done
     done
-
-    for (( i = 0; i < ${#disk[@]}; i++ )); do
-        (( disk[i] >= 0 )) || continue
-        (( checksum += i * disk[i] ))
-    done
-
-    printf '%s\n' "${checksum}"
 }
 
 main() {
-    local raw
-    read -r raw < "${1:-/dev/stdin}"
-    part_a "${raw}"
-    part_b "${raw}"
+    local -a files empty da db
+    local i j k sum_a sum_b
+
+    read -r i < "${1:-/dev/stdin}"
+    set -- "${i}"
+
+    for (( i = 0; i < ${#1}; i += 2 )); do
+        files+=( "${#da[@]}:${1:i:1}" )
+        for (( j = 0; j < ${1:i:1}; j++ )); do
+            da+=( "${k:=0}" )
+        done
+        (( k++ ))
+        (( i + 1 > ${#1} )) || continue
+        empty+=( "${#da[@]}:${1:i+1:1}" )
+        for (( j = 0; j < ${1:i+1:1}; j++ )); do
+            da+=( "-1" )
+        done
+    done
+    db=( "${da[@]}" )
+
+    bit_fill "da"
+    block_fill "files" "empty" "db"
+
+    for (( i = 0; i < ${#da[@]}; i++ )); do
+        (( sum_a += da[i] >= 0 ? i * da[i] : 0 ))
+        (( sum_b += db[i] >= 0 ? i * db[i] : 0 ))
+    done
+
+    printf '%s\n' "${sum_a:-0}" "${sum_b:-0}"
 }
 
 main "${@}"
