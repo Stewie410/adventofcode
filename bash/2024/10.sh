@@ -21,13 +21,14 @@ get_trails() {
 }
 
 main() {
-    local -a data map starts ends unique any
+    local -a data map starts unique any
     local i y x w h sum_a sum_b
 
     mapfile -t data < "${1:-/dev/stdin}"
     (( w = "${#data[0]}", h = ${#data[@]} ))
     for (( y = 0; y < h; y++ )); do
         for (( x = 0; x < w; x++ )); do
+            # '.' case needed for test input only
             case "${data[y]:x:1}" in
                 '.' )   map+=( "-1" ); continue;;
                 '0' )   (( starts[y * w + x] = 0 ));;
