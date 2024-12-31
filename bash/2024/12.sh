@@ -81,61 +81,42 @@ get_groups() {
 # ref(map) width height group...
 get_perimeter() {
     local -n arr="${1}"
-    local i x y w h p sum
-    (( w = ${2}, h = ${3} ))
-
-    for i in "${@:4}"; do
-        p="4"
-        while read -r y x; do
-            (( y >= 0 && y < h && x >= 0 && x < w )) || continue
-            (( p -= arr[y * w + x] == arr[i] ))
-        done < <(neighbors "$(( i / w ))" "$(( i % w ))")
-        (( sum += p ))
-    done
-
-    printf '%d\n' "${sum:-0}"
-}
-
-# ref(map) width height group...
-get_corners() {
-    local -n arr="${1}"
-    local -a sur
-    local i j x y w h sum
+    local -a nodes
+    local i j x y w h psum csum
     (( w = ${2}, h = ${3} ))
 
     if (( $# == 4 )); then
-        printf '4\n'
+        printf '%d %d\n' "4" "4"
         return 0
     fi
 
     for i in "${@:4}"; do
-        # NW N NE E SE S SW W
-        # 0: ingroup, 1: outgroup
-        sur=()
-        c="0"
-        while read -r y x; do
+        # NW N NE E SE S SW W -> 0 is edge
+        mapfile -t nodes < <(surrounding "$(( i / w ))" "$(( i % w ))")
+        for (( j = 0; j < ${#nodes[@]}; j++ )); do
+            read -r y x <<< "${nodes[j]}"
             if ! (( y >= 0 && y < h && x >= 0 && x < w )); then
-                sur+=( "0" )
-                continue
+                (( nodes[j] = 1 ))
+            else
+                (( nodes[j] = arr[y * w + x] != arr[i] ))
             fi
+        done
 
-            sur+=( "$(( arr[y * w + x] == arr[i] ))" )
-        done < <(surrounding "$(( i / w ))" "$(( i % w ))")
+        # perimiter
+        (( psum += nodes[1] + nodes[3] + nodes[5] + nodes[7] ))
 
-        # nw, ne, sw, se: outer
-        (( sum += sur[1] && sur[7] && sur[0] == 0 ))
-        (( sum += sur[1] && sur[3] && sur[2] == 0 ))
-        (( sum += sur[5] && sur[7] && sur[6] == 0 ))
-        (( sum += sur[5] && sur[3] && sur[4] == 0 ))
+        # corners: outer, NW NE SW SE
+        (( csum += (nodes[1] && nodes[7]) + (nodes[1] && nodes[3]) ))
+        (( csum += (nodes[5] && nodes[7]) + (nodes[5] && nodes[3]) ))
 
-        # nw, ne, sw, se: inner
-        (( sum += ! (sur[1] || sur[7]) ))
-        (( sum += ! (sur[1] || sur[3]) ))
-        (( sum += ! (sur[5] || sur[7]) ))
-        (( sum += ! (sur[5] || sur[3]) ))
+        # corners: inner, NW NE SW SE
+        (( csum += (nodes[1] + nodes[7] == 0) && nodes[0] ))
+        (( csum += (nodes[1] + nodes[3] == 0) && nodes[2] ))
+        (( csum += (nodes[5] + nodes[7] == 0) && nodes[6] ))
+        (( csum += (nodes[5] + nodes[3] == 0) && nodes[4] ))
     done
 
-    printf '%d\n' "${sum:-0}"
+    printf '%d %d\n' "${psum}" "${csum}"
 }
 
 main() {
@@ -148,8 +129,7 @@ main() {
     unset data
 
     while read -ra group; do
-        edges="$(get_perimeter "map" "${w}" "${h}" "${group[@]}")"
-        corners="$(get_corners "map" "${w}" "${h}" "${group[@]}")"
+        read -r edges corners < <(get_perimeter "map" "${w}" "${h}" "${group[@]}")
         (( cost1 += ${#group[@]} * edges, cost2 += ${#group[@]} * corners ))
     done < <(get_groups "map" "${w}" "${h}")
 
