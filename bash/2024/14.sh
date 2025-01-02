@@ -1,137 +1,84 @@
 #!/usr/bin/env bash
-
-# position velocity width height seconds
-get_position() {
-    local px py vx vy w h t tx ty
-    (( w = ${3}, h = ${4}, t = ${5} ))
-    read -r px py <<< "${1}"
-    read -r vx vy <<< "${2}"
-
-    (( tx = (px + vx * t) % w, ty = (py + vy * t) % h ))
-    (( tx += tx < 0 ? w : 0, ty += ty < 0 ? h : 0 ))
-
-    printf '%d %d\n' "${tx}" "${ty}"
-}
-
-# ref(point) ref(velocity) width height
-part_a() {
-    local -n pos="${1}"
-    local -n vel="${2}"
-    local -a quad
-    local i x y w h result
-    (( w = ${3}, h = ${4} ))
-
-    for (( i = 0; i < ${#pos[@]}; i++ )); do
-        read -r x y < <(get_position "${pos[i]}" "${vel[i]}" "${w}" "${h}" "100")
-        (( y == (h / 2) || x == (w / 2) )) && continue
-        (( quad[(y > (h / 2)) * 2 + (x > (w / 2))]++ ))
-    done
-
-    for (( i = 0, result = 1; i < 4; i++ )); do
-        (( result *= quad[i] ))
-    done
-
-    printf '%d\n' "${result}"
-}
-
-# width height positions...
-print_map() {
-    local -a dict
-    local i x y w h c
-    (( w = ${1}, h = ${2} ))
-
-    for i in "${@:3}"; do
-        read -r x y <<< "${i}"
-        (( dict[y * w + x]++ ))
-    done
-
-    for (( y = 0; y < h; y++ )); do
-        for (( x = 0; x < w; x++ )); do
-            c=" "
-            if (( dict[y * w + x] > 0 )); then
-                c="${dict[y * w + x]}"
-            fi
-            printf '%s' "${c}"
-        done
-        printf '\n'
-    done
-}
-
-# width height x_offset y_offset ref(bots)
-print_window() {
-    local -n dict="${5}"
-    local i x y xos yos w h
-    (( w = ${1}, h = ${2}, xos = ${3}, yos = ${4} ))
-
-    for (( y = yos; y <= (y + 31) && y < h; y++ )); do
-        for (( x = xos; x <= (x + 31) && x < w; x++ )); do
-            if [[ -n "${dict[y * w + x]}" ]]; then
-                printf 'x'
-            else
-                printf ' '
-            fi
-        done
-        printf '\n'
-    done
-}
-
-# From visual solve, looks like all bots are in unique positions in a
-# "tree-state"...
 #
-# width height positions...
-contains_tree() {
-    local -a bots
-    local i x y w h
-    (( w = ${1}, h = ${2} ))
+# Thanks to u/c4irns for the explainer on tree-detection...its a lot cleaner
+# than my original check.
+#
+# https://old.reddit.com/r/adventofcode/comments/1hdvhvu/2024_day_14_solutions/m2ck0kh/
 
-    for i in "${@:3}"; do
+# ref(position/out) ref(velocity) width height [count=1]
+step() {
+    local -n bot="${1}"
+    local -n amt="${2}"
+    local i px py vx vy w h count
+    (( w = ${3}, h = ${4}, count = ${5:-1} ))
+
+    for (( i = 0; i < ${#bot[@]}; i++ )); do
+        read -r px py vx vy <<< "${bot[i]} ${amt[i]}"
+        (( px = (px + vx * count) % w, py = (py + vy * count) % h ))
+        (( px += px < 0 ? w : 0, py += py < 0 ? h : 0 ))
+        bot[i]="${px} ${py}"
+    done
+}
+
+# ref(position) width height
+get_score() {
+    local -n arr="${1}"
+    local -a quad
+    local i x y mw mh
+    (( mw = ${2} / 2, mh = ${3} / 2 ))
+
+    for i in "${arr[@]}"; do
         read -r x y <<< "${i}"
-        (( bots[y * w + x]++ ))
-        (( bots[y * w + x] > 1 )) && return 1
+        (( y == mh || x == mw )) && continue
+        (( quad[(y > mh) * 2 + (x > mw)]++ ))
+    done
+
+    printf '%d\n' "$(( quad[0] * quad[1] * quad[2] * quad[3] ))"
+}
+
+# ref(position) width
+only_unique() {
+    local -n arr="${1}"
+    local -a seen
+    local i x y w
+    (( w = ${2} ))
+
+    for i in "${arr[@]}"; do
+        read -r x y <<< "${i}"
+        (( seen[y * w + x]++ ))
+        (( seen[y * w + x] > 1 )) && return 1
     done
 
     return 0
 }
 
-# ref(point) ref(velocity) width height
-part_b() {
-    local -n pos="${1}"
-    local -n vel="${2}"
-    local i x y w h seconds
-    (( w = ${3}, h = ${4} ))
-
-    for (( seconds = 0; seconds >= 0; seconds++ )); do
-        contains_tree "${w}" "${h}" "${pos[@]}" && break
-        for (( i = 0; i < ${#pos[@]}; i++ )); do
-            pos[i]="$(get_position "${pos[i]}" "${vel[i]}" "${w}" "${h}" "1")"
-        done
-    done
-
-    printf '%d\n' "${seconds}"
-}
-
 main() {
-    local -a point velocity
-    local i x y w h line part
+    local -a pos vel seen
+    local i w h x y v t line part
 
     while read -r line; do
-        # parse points
-        part="${line% *}"
-        part="${part:2}"
-        (( x = ${part%,*}, y = ${part##*,} ))
+        part="${line//[pv=]/}"
+        read -r x y v <<< "${part//,/ }"
         (( w = x > w ? x : w, h = y > h ? y : h ))
-        point+=( "${part//,/ }" )
-
-        # parse velocities
-        part="${line##*=}"
-        velocity+=( "${part//,/ }" )
+        pos+=( "${x} ${y}" )
+        vel+=( "${v}" )
     done < "${1:-/dev/stdin}"
     (( w++, h++ ))
 
-    part_a "point" "velocity" "${w}" "${h}"
-    # skip part_b() for test data
-    (( w == 11 && h == 7 )) && return
-    part_b "point" "velocity" "${w}" "${h}"
+    # part_b is unique to real data; so we'll skip if just testing
+    if (( w == 11 && h == 7 )); then
+        step "pos" "vel" "${w}" "${h}" "100"
+        get_score "pos" "${w}" "${h}"
+        return
+    fi
+
+    for (( t = 0; t >= 0; t++ )); do
+        (( t == 100 )) && get_score "pos" "${w}" "${h}"
+        only_unique "pos" "${w}" && break
+        step "pos" "vel" "${w}" "${h}"
+    done
+
+    printf '%d\n' "${t}"
 }
 
 main "${@}"
