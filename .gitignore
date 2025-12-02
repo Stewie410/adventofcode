@@ -3,5 +3,5 @@ aoc.*
 data.*
 test.*
 basic.*
-data/*
-test/*
+data/
+test/
