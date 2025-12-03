@@ -13,7 +13,7 @@ main() {
                 continue
             fi
 
-            for (( len-- ; len >= 1; len-- )); do
+            for (( ; len > 0; len-- )); do
                 (( ${#i} % len == 0 )) || continue
                 [[ "${i}" =~ ^("${i:0:len}"){2,}$ ]] || continue
                 (( p2 += i ))
