@@ -24,29 +24,6 @@ max() {
     printf '%d\n' "${num:-0}"
 }
 
-p1_bf() {
-    local -a map
-    local line i j jolt max total
-
-    while read -r line; do
-        map=( "${line:0:1}" )
-        for (( i = 1; i < ${#line}; i++ )); do
-            (( map[-1] == ${line:i:1} )) && continue
-            map+=( "${line:i:1}" )
-        done
-
-        for (( i = 0, max = 0; i < (${#map[@]} - 1); i++ )); do
-            for (( j = i + 1; j < ${#map[@]}; j++ )); do
-                jolt="${map[i]}${map[j]}"
-                (( jolt > max )) && max="${jolt}"
-            done
-        done
-        (( total += max ))
-    done < "${1}"
-
-    printf '%d\n' "${total:-0}"
-}
-
 main() {
     local line p1 p2 max1 max2
     while read -r line; do
