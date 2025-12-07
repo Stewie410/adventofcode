@@ -22,20 +22,17 @@ main() {
     local p1
     for (( y = 2; y < h; y++ )); do
         for (( x = 0; x < w; x++ )); do
-            (( map[y * w + x] == -1 )) || continue
-            (( map[(y - 1) * w + x] > 0 )) || continue
-
-            # split
-            (( map[y * w + (x - 1)] += map[(y - 1) * w + x] ))
-            (( map[y * w + (x + 1)] += map[(y - 1) * w + x] ))
-            (( p1++ ))
+            if (( map[y * w + x] == -1 && map[(y - 1) * w + x] > 0 )); then
+                (( map[y * w + (x - 1)] += map[(y - 1) * w + x] ))
+                (( map[y * w + (x + 1)] += map[(y - 1) * w + x] ))
+                (( p1++ ))
+            fi
         done
 
         for (( x = 0; x < w; x++ )); do
-            (( map[y * w + x] >= 0 )) || continue
-            (( map[(y - 1) * w + x] > 0 )) || continue
-
-            (( map[y * w + x] += map[(y - 1) * w + x] ))
+            if (( map[y * w + x] != -1 && map[(y - 1) * w + x] > 0 )); then
+                (( map[y * w + x] += map[(y - 1) * w + x] ))
+            fi
         done
     done
 
